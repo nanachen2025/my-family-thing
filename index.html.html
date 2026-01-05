@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭管理中心 - 語音與追加修復版</title>
+    <style>
+        :root {
+            --primary-blue: #7fb3d5;
+            --warm-bg: #fdf5e6;
+            --card-white: #ffffff;
+            --text-brown: #5d4037;
+            --accent-orange: #ff8a65;
+            --delete-red: #e57373;
+            --save-green: #66bb6a;
+            --history-gold: #d4a373;
+        }
+
+        body, html { height: 100%; margin: 0; font-family: "Microsoft JhengHei", sans-serif; background-color: var(--warm-bg); color: var(--text-brown); overflow: hidden; }
+        .main-wrapper { display: flex; height: 100vh; padding: 15px; box-sizing: border-box; gap: 15px; }
+        .left-panel { flex: 2; display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
+        .right-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; height: 100%; }
+        .history-section { flex: 1; background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
+
+        .nav-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .nav-btn { flex: 1; padding: 15px; border: none; border-radius: 25px; cursor: pointer; background: white; color: var(--primary-blue); font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .nav-btn.active { background: var(--primary-blue); color: white; }
+
+        .content-card { background: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2 { border-left: 6px solid var(--accent-orange); padding-left: 12px; margin-top: 0; font-size: 1.2rem; }
+
+        .basic-info-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed #eee; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #fafafa; color: #888; font-size: 0.8rem; }
+
+        .input-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; }
+        .btn { border: none; border-radius: 12px; cursor: pointer; font-weight: bold; padding: 10px 15px; transition: 0.3s; }
+        .btn-primary { background: var(--accent-orange); color: white; }
+        .btn-save { background: var(--save-green); color: white; }
+        .btn-del { background: var(--delete-red); color: white; }
+        .btn-bundle { background: var(--history-gold); color: white; width: 100%; margin-top: 5px; padding: 8px; font-size: 0.9rem; }
+        
+        .mic-btn { background: #4caf50; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem; border: none; cursor: pointer; }
+        .recording { background: #f44336; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        .chat-box, .history-box { flex: 1; overflow-y: auto; background: #fafafa; border: 1px solid #eee; padding: 10px; border-radius: 12px; margin-top: 10px; }
+        .bundle-box { border: 2px solid var(--history-gold); border-radius: 10px; padding: 10px; margin-bottom: 10px; background: #fffdf9; }
+        .bundle-title { font-weight: bold; color: var(--history-gold); border-bottom: 1px solid var(--history-gold); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .bundle-item { font-size: 0.85rem; padding: 2px 0; border-bottom: 1px dotted #ddd; color: #666; }
+        .add-to-bundle { background: #f0f0f0; color: #555; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div class="left-panel">
+            <div class="nav-container">
+                <button class="nav-btn active" onclick="showTab('papa')">爸爸</button>
+                <button class="nav-btn" onclick="showTab('mama')">媽媽</button>
+                <button class="nav-btn" onclick="showTab('worker')">外勞</button>
+            </div>
+            <div id="papa" class="tab-content"></div>
+            <div id="mama" class="tab-content" style="display:none"></div>
+            <div id="worker" class="tab-content" style="display:none"></div>
+        </div>
+
+        <div class="right-panel">
+            <div class="history-section">
+                <h2 style="border-color: var(--history-gold);">📜 討論歷史 (勾選打包)</h2>
+                <div id="history-chat" class="history-box"></div>
+                <button class="btn btn-bundle" onclick="bundleItems('chat')">📦 選取討論項目打包</button>
+            </div>
+            <div class="history-section">
+                <h2 style="border-color: var(--history-gold);">📁 檔案歷史 (勾選打包)</h2>
+                <div id="history-file" class="history-box"></div>
+                <button class="btn btn-bundle" onclick="bundleItems('file')">📦 選取檔案項目打包</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const config = {
+            papa: { topics: ['老人', '骨頭', '攝護腺'] },
+            mama: { topics: ['眼睛', '心臟', '中風', '骨頭'] }
+        };
+        const family = ['娜姐', '阿瑋', '阿至', '小奇'];
+
+        function init() {
+            ['papa', 'mama', 'worker'].forEach(m => {
+                const isWorker = m === 'worker';
+                document.getElementById(m).innerHTML = `
+                    ${!isWorker ? `
+                    <div class="content-card">
+                        <h2>🏥 健康基本資料</h2>
+                        <div id="${m}-basic-display"></div>
+                        <div class="input-row">
+                            <input type="text" id="${m}-b-k" placeholder="項目" style="width:120px">
+                            <input type="text" id="${m}-b-v" placeholder="數值" style="width:100px">
+                            <button class="btn btn-primary" onclick="addBasic('${m}')">新增</button>
+                        </div>
+                    </div>
+                    <div class="content-card">
+                        <h2>📋 醫療討論紀錄</h2>
+                        <table>
+                            <thead><tr><th>討論項目</th><th>內容</th><th style="width:40px">刪</th></tr></thead>
+                            <tbody id="${m}-med-body"></tbody>
+                        </table>
+                        <div class="input-row">
+                            <select id="${m}-topic">${config[m].topics.map(t=>`<option>${t}</option>`).join('')}</select>
+                            <input type="text" id="${m}-val" placeholder="自由填寫..." style="flex:1">
+                            <button class="btn btn-primary" onclick="addMed('${m}')">填列</button>
+                        </div>
+                    </div>` : ''}
+                    <div class="content-card">
+                        <h2>💬 討論區</h2>
+                        <div id="${m}-chat" class="chat-box" style="height:200px"></div>
+                        <div class="input-row">
+                            <select id="${m}-user">${family.map(f=>`<option>${f}</option>`).join('')}${isWorker?'<option>Worker</option>':''}</select>
+                            <button class="mic-btn" id="${m}-mic" onclick="startVoice('${m}')">🎤</button>
+                            <input type="text" id="${m}-msg" placeholder="輸入訊息..." style="flex:1">
+                            <button class="btn btn-primary" onclick="addChat('${m}')">送出</button>
+                        </div>
+                    </div>
+                    <div class="content-card">
+                        <h2>📂 檔案管理</h2>
+                        <div class="input-row">
+                            <input type="file" id="${m}-file" style="flex:1">
+                            <button class="btn btn-save" onclick="upload('${m}')">確認上傳</button>
+                        </div>
+                        <div id="${m}-temp-file" style="margin-top:10px"></div>
+                    </div>
+                `;
+                refresh(m);
+            });
+            loadHistory();
+        }
+
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
+            document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+            document.getElementById(id).style.display='block';
+            event.currentTarget.classList.add('active');
+        }
+
+        function refresh(m) {
+            if(m !== 'worker') {
+                const basic = getLocal(m+'-basic');
+                document.getElementById(m+'-basic-display').innerHTML = basic.map((b,i)=>`<div class="basic-info-item"><span><strong>${b.k}</strong>: ${b.v}</span><button class="btn-del" style="padding:2px 5px" onclick="delItem('${m}-basic',${i},'${m}')">❌</button></div>`).join('');
+                const med = getLocal(m+'-med');
+                document.getElementById(m+'-med-body').innerHTML = med.map((d,i)=>`<tr><td>${d.t}</td><td>${d.v}</td><td><button class="btn-del" style="padding:2px 5px" onclick="delItem('${m}-med',${i},'${m}')">❌</button></td></tr>`).join('');
+            }
+            const chat = getLocal(m+'-chat');
+            document.getElementById(m+'-chat').innerHTML = chat.map((c,i)=>`<div style="font-size:0.85rem; border-bottom:1px solid #eee; padding:5px"><b>${c.u}:</b> ${c.txt} <div style="margin-top:3px"><button class="btn-save" style="font-size:0.7rem; padding:2px" onclick="moveH('chat','${m}',${i})">存歷史</button> <button class="btn-del" style="font-size:0.7rem; padding:2px" onclick="delItem('${m}-chat',${i},'${m}')">刪</button></div></div>`).join('');
+            const file = getLocal(m+'-file');
+            document.getElementById(m+'-temp-file').innerHTML = file.map((f,i)=>`<div style="background:#eef; padding:5px; margin-top:5px; border-radius:5px">📄 ${f.name} <button class="btn-save" style="font-size:0.7rem; padding:2px" onclick="moveH('file','${m}',${i})">存歷史</button> <button class="btn-del" style="font-size:0.7rem; padding:2px" onclick="delItem('${m}-file',${i},'${m}')">刪</button></div>`).join('');
+        }
+
+        function moveH(type, m, idx) {
+            const data = getLocal(m+'-'+type);
+            const item = data.splice(idx,1)[0];
+            item.from = m;
+            const hist = getLocal('h-'+type);
+            hist.push(item);
+            setLocal('h-'+type, hist);
+            setLocal(m+'-'+type, data);
+            refresh(m);
+            loadHistory();
+        }
+
+        function loadHistory() {
+            ['chat', 'file'].forEach(type => {
+                const data = getLocal('h-'+type);
+                document.getElementById('history-'+type).innerHTML = data.map((d,i)=> {
+                    if(d.isBundle) {
+                        return `<div class="bundle-box">
+                            <div class="bundle-title">
+                                <span>📦 ${d.title}</span>
+                                <div>
+                                    <span class="add-to-bundle" onclick="appendBundle('${type}', ${i})">➕ 追加</span>
+                                    <button class="btn-del" style="padding:0 5px" onclick="delItem('h-${type}',${i},'hist')">❌</button>
+                                </div>
+                            </div>
+                            ${d.items.map(it=>`<div class="bundle-item">· [${it.from}] ${type==='chat'?it.u+': '+it.txt:'📄 '+it.name}</div>`).join('')}
+                        </div>`;
+                    }
+                    return `<div style="padding:5px; border-bottom:1px solid #ddd; font-size:0.85rem">
+                        <input type="checkbox" class="${type}-check" data-idx="${i}"> [${d.from}] ${type==='chat'?d.u+': '+d.txt:'📄 '+d.name}
+                    </div>`;
+                }).join('') || '<div style="color:#ccc; text-align:center; margin-top:20px">尚無存檔</div>';
+            });
+        }
+
+        function bundleItems(type) {
+            const checks = Array.from(document.querySelectorAll(`.${type}-check:checked`));
+            if(checks.length === 0) return alert('請先勾選項目');
+            const title = prompt('請輸入打包名稱：');
+            if(!title) return;
+            
+            const hist = getLocal('h-'+type);
+            const indices = checks.map(c=>parseInt(c.dataset.idx)).sort((a,b)=>b-a);
+            const items = indices.map(idx => hist.splice(idx, 1)[0]);
+            
+            hist.push({ isBundle: true, title, items: items.reverse() });
+            setLocal('h-'+type, hist);
+            loadHistory();
+        }
+
+        function appendBundle(type, bundleIdx) {
+            const checks = Array.from(document.querySelectorAll(`.${type}-check:checked`));
+            if(checks.length === 0) return alert('請勾選想要併入的零散項目');
+            
+            let hist = getLocal('h-'+type);
+            const indices = checks.map(c=>parseInt(c.dataset.idx)).sort((a,b)=>b-a);
+            
+            // 暫存要移入的項目
+            const movingItems = indices.map(idx => hist[idx]);
+            
+            // 標記要刪除的舊位置（從大到小刪除以維持索引正確）
+            indices.forEach(idx => hist.splice(idx, 1));
+            
+            // 因為上面的 splice 改變了陣列長度，我們需要重新找到原來的 bundle
+            // 我們改用 title 來匹配 bundle (簡單但實用)
+            const targetBundleTitle = getLocal('h-'+type)[bundleIdx].title; // 這裡 bundleIdx 可能因刪除偏移
+            // 重新讀取 current list 找到正確的 bundle 物件
+            const targetBundle = hist.find(item => item.isBundle && item.title === targetBundleTitle);
+            
+            if(targetBundle) {
+                targetBundle.items = targetBundle.items.concat(movingItems.reverse());
+            }
+
+            setLocal('h-'+type, hist);
+            loadHistory();
+        }
+
+        function startVoice(m) {
+            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if(!Speech) return alert('您的瀏覽器不支援語音輸入');
+            const rec = new Speech();
+            rec.lang = 'zh-TW';
+            const btn = document.getElementById(m+'-mic');
+            rec.onstart = () => btn.classList.add('recording');
+            rec.onend = () => btn.classList.remove('recording');
+            rec.onresult = (e) => document.getElementById(m+'-msg').value = e.results[0][0].transcript;
+            rec.start();
+        }
+
+        // 基本小工具
+        function addBasic(m) {
+            const k=val(m+'-b-k'), v=val(m+'-b-v');
+            if(!k||!v) return;
+            const d=getLocal(m+'-basic'); d.push({k,v}); setLocal(m+'-basic',d);
+            clr(m+'-b-k'); clr(m+'-b-v'); refresh(m);
+        }
+        function addMed(m) {
+            const t=val(m+'-topic'), v=val(m+'-val');
+            if(!v) return;
+            const d=getLocal(m+'-med'); d.push({t,v}); setLocal(m+'-med',d);
+            clr(m+'-val'); refresh(m);
+        }
+        function addChat(m) {
+            const u=val(m+'-user'), txt=val(m+'-msg');
+            if(!txt) return;
+            const d=getLocal(m+'-chat'); d.push({u,txt,time:new Date().toLocaleString()}); setLocal(m+'-chat',d);
+            clr(m+'-msg'); refresh(m);
+        }
+        function upload(m) {
+            const f = document.getElementById(m+'-file').files[0];
+            if(!f) return;
+            const d=getLocal(m+'-file'); d.push({name:f.name, time:new Date().toLocaleString()}); setLocal(m+'-file',d);
+            refresh(m);
+        }
+        function delItem(k,i,m) { if(confirm('確定刪除？')){ const d=getLocal(k); d.splice(i,1); setLocal(k,d); if(m==='hist') loadHistory(); else refresh(m); } }
+        function getLocal(k) { return JSON.parse(localStorage.getItem(k) || '[]'); }
+        function setLocal(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+        function val(id) { return document.getElementById(id).value; }
+        function clr(id) { document.getElementById(id).value = ''; }
+
+        init();
+    </script>
+</body>
+</html>
