@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>家庭管理中心 - 雲端同步版</title>
+    <title>家庭守護中心 - 易讀版</title>
     <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database-compat.js"></script>
     <style>
@@ -12,35 +12,42 @@
             --text-brown: #5d4037; --accent-orange: #ff8a65; --delete-red: #e57373;
             --save-green: #66bb6a; --history-gold: #d4a373;
         }
-        body, html { height: 100%; margin: 0; font-family: "Microsoft JhengHei", sans-serif; background-color: var(--warm-bg); color: var(--text-brown); overflow: hidden; }
+        /* 字體全面放大 */
+        body, html { height: 100%; margin: 0; font-family: "Microsoft JhengHei", sans-serif; background-color: var(--warm-bg); color: var(--text-brown); font-size: 1.2rem; }
+        
         .main-wrapper { display: flex; height: 100vh; padding: 15px; box-sizing: border-box; gap: 15px; }
-        .left-panel { flex: 2; display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
-        .right-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; height: 100%; }
-        .history-section { flex: 1; background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
-        .nav-container { display: flex; gap: 10px; margin-bottom: 15px; }
-        .nav-btn { flex: 1; padding: 15px; border: none; border-radius: 25px; cursor: pointer; background: white; color: var(--primary-blue); font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* 討論區佔據主要左邊 70% */
+        .left-panel { flex: 7; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        /* 檔案與歷史縮小至右邊 30% */
+        .right-panel { flex: 3; display: flex; flex-direction: column; gap: 15px; height: 100%; overflow-y: auto; }
+
+        .nav-container { display: flex; gap: 10px; margin-bottom: 10px; }
+        .nav-btn { flex: 1; padding: 12px; border: none; border-radius: 15px; cursor: pointer; background: white; color: var(--primary-blue); font-weight: bold; font-size: 1.3rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .nav-btn.active { background: var(--primary-blue); color: white; }
-        .content-card { background: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h2 { border-left: 6px solid var(--accent-orange); padding-left: 12px; margin-top: 0; font-size: 1.2rem; }
-        .basic-info-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed #eee; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        th { background: #fafafa; color: #888; font-size: 0.8rem; }
-        .input-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; }
-        .btn { border: none; border-radius: 12px; cursor: pointer; font-weight: bold; padding: 10px 15px; transition: 0.3s; }
+
+        .chat-section { background: white; border-radius: 20px; padding: 20px; flex: 1; display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .chat-box { flex: 1; overflow-y: auto; background: #fafafa; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; }
+        
+        /* 對話樣式：加大字體，移除多餘按鈕 */
+        .chat-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; line-height: 1.6; }
+        .chat-user { font-weight: bold; color: var(--primary-blue); font-size: 1.1rem; }
+        .chat-text { font-size: 1.4rem; display: block; margin-top: 5px; }
+
+        .input-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        input, select { padding: 15px; border: 1px solid #ddd; border-radius: 12px; font-size: 1.2rem; }
+        .btn { border: none; border-radius: 15px; cursor: pointer; font-weight: bold; padding: 12px 20px; font-size: 1.1rem; }
         .btn-primary { background: var(--accent-orange); color: white; }
-        .btn-save { background: var(--save-green); color: white; }
-        .btn-del { background: var(--delete-red); color: white; }
-        .btn-bundle { background: var(--history-gold); color: white; width: 100%; margin-top: 5px; padding: 8px; font-size: 0.9rem; }
-        .mic-btn { background: #4caf50; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem; border: none; cursor: pointer; }
+        
+        .mic-btn { background: #4caf50; color: white; width: 60px; height: 60px; border-radius: 50%; font-size: 1.8rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .recording { background: #f44336; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .chat-box, .history-box { flex: 1; overflow-y: auto; background: #fafafa; border: 1px solid #eee; padding: 10px; border-radius: 12px; margin-top: 10px; }
-        .bundle-box { border: 2px solid var(--history-gold); border-radius: 10px; padding: 10px; margin-bottom: 10px; background: #fffdf9; }
-        .bundle-title { font-weight: bold; color: var(--history-gold); border-bottom: 1px solid var(--history-gold); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .bundle-item { font-size: 0.85rem; padding: 2px 0; border-bottom: 1px dotted #ddd; color: #666; }
-        .add-to-bundle { background: #f0f0f0; color: #555; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; border: 1px solid #ccc; }
+
+        .side-card { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; font-size: 1.1rem; color: var(--history-gold); border-bottom: 2px solid var(--history-gold); padding-bottom: 5px; }
+        
+        /* 檔案管理區 */
+        .file-item { background: #eef; padding: 8px; margin-top: 5px; border-radius: 8px; font-size: 1rem; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -51,26 +58,40 @@
                 <button class="nav-btn" onclick="showTab('mama')">媽媽</button>
                 <button class="nav-btn" onclick="showTab('worker')">外勞</button>
             </div>
-            <div id="papa" class="tab-content"></div>
-            <div id="mama" class="tab-content" style="display:none"></div>
-            <div id="worker" class="tab-content" style="display:none"></div>
-        </div>
-        <div class="right-panel">
-            <div class="history-section">
-                <h2 style="border-color: var(--history-gold);">📜 討論歷史 (全家同步)</h2>
-                <div id="history-chat" class="history-box"></div>
-                <button class="btn btn-bundle" onclick="bundleItems('chat')">📦 選取討論項目打包</button>
+            
+            <div id="tab-content-area" class="chat-section">
+                <div id="chat-display" class="chat-box"></div>
+                <div class="input-row">
+                    <select id="user-select" style="width: 120px;"></select>
+                    <button class="mic-btn" id="mic-btn" onclick="startVoice()">🎤</button>
+                    <input type="text" id="msg-input" placeholder="說點什麼..." style="flex:1">
+                    <button class="btn btn-primary" onclick="sendMessage()">送出</button>
+                </div>
             </div>
-            <div class="history-section">
-                <h2 style="border-color: var(--history-gold);">📁 檔案歷史 (全家同步)</h2>
-                <div id="history-file" class="history-box"></div>
-                <button class="btn btn-bundle" onclick="bundleItems('file')">📦 選取檔案項目打包</button>
+        </div>
+
+        <div class="right-panel">
+            <div class="side-card">
+                <h3>📂 檔案傳送區</h3>
+                <input type="file" id="file-input" style="width: 100%; font-size: 0.9rem;">
+                <button class="btn btn-primary" style="width: 100%; margin-top:10px; background: var(--save-green);" onclick="uploadFile()">確認上傳</button>
+                <div id="file-display"></div>
+            </div>
+            
+            <div class="side-card">
+                <h3>🏥 健康指標</h3>
+                <div id="health-display" style="font-size: 1rem;"></div>
+            </div>
+
+            <div class="side-card" style="flex: 1; overflow-y: auto;">
+                <h3>📦 已打包歷史</h3>
+                <div id="history-display" style="font-size: 0.9rem;"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Firebase 配置 ---
+        // --- Firebase 配置 (延用您的金鑰) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDuO2yT2EGDb5llq9dLWE0VWHaSpzBEuvE",
             authDomain: "my-family-thing.firebaseapp.com",
@@ -83,186 +104,75 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const config = {
-            papa: { topics: ['老人', '骨頭', '攝護腺'] },
-            mama: { topics: ['眼睛', '心臟', '中風', '骨頭'] }
-        };
+        let currentTab = 'papa';
         const family = ['娜姐', '阿瑋', '阿至', '小奇'];
 
         function init() {
-            ['papa', 'mama', 'worker'].forEach(m => {
-                const isWorker = m === 'worker';
-                document.getElementById(m).innerHTML = `
-                    ${!isWorker ? `
-                    <div class="content-card">
-                        <h2>🏥 健康基本資料</h2>
-                        <div id="${m}-basic-display"></div>
-                        <div class="input-row">
-                            <input type="text" id="${m}-b-k" placeholder="項目" style="width:120px">
-                            <input type="text" id="${m}-b-v" placeholder="數值" style="width:100px">
-                            <button class="btn btn-primary" onclick="addData('${m}/basic', {k:val('${m}-b-k'), v:val('${m}-b-v')}, '${m}-b-k', '${m}-b-v')">新增</button>
-                        </div>
-                    </div>
-                    <div class="content-card">
-                        <h2>📋 醫療討論紀錄</h2>
-                        <table>
-                            <thead><tr><th>討論項目</th><th>內容</th><th style="width:40px">刪</th></tr></thead>
-                            <tbody id="${m}-med-body"></tbody>
-                        </table>
-                        <div class="input-row">
-                            <select id="${m}-topic">${config[m].topics.map(t=>`<option>${t}</option>`).join('')}</select>
-                            <input type="text" id="${m}-val" placeholder="填寫內容..." style="flex:1">
-                            <button class="btn btn-primary" onclick="addData('${m}/med', {t:val('${m}-topic'), v:val('${m}-val')}, '${m}-val')">填列</button>
-                        </div>
-                    </div>` : ''}
-                    <div class="content-card">
-                        <h2>💬 討論區</h2>
-                        <div id="${m}-chat" class="chat-box" style="height:200px"></div>
-                        <div class="input-row">
-                            <select id="${m}-user">${family.map(f=>`<option>${f}</option>`).join('')}${isWorker?'<option>Worker</option>':''}</select>
-                            <button class="mic-btn" id="${m}-mic" onclick="startVoice('${m}')">🎤</button>
-                            <input type="text" id="${m}-msg" placeholder="輸入訊息..." style="flex:1">
-                            <button class="btn btn-primary" onclick="addData('${m}/chat', {u:val('${m}-user'), txt:val('${m}-msg'), time:new Date().toLocaleString()}, '${m}-msg')">送出</button>
-                        </div>
-                    </div>
-                    <div class="content-card">
-                        <h2>📂 檔案管理</h2>
-                        <div class="input-row">
-                            <input type="file" id="${m}-file-input" style="flex:1">
-                            <button class="btn btn-save" onclick="uploadFile('${m}')">確認上傳</button>
-                        </div>
-                        <div id="${m}-temp-file" style="margin-top:10px"></div>
-                    </div>
-                `;
-                // 監聽各區資料更新
-                listenData(m);
-            });
-            listenHistory();
+            showTab('papa');
         }
 
-        // --- Firebase 核心操作 ---
-        function addData(path, obj, ...clearIds) {
-            if(!obj.v && !obj.txt && !obj.k && !obj.name) return;
-            db.ref(path).push(obj);
-            clearIds.forEach(id => clr(id));
+        function showTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            event?.currentTarget?.classList?.add('active') || document.querySelector(`button[onclick="showTab('${tab}')"]`).classList.add('active');
+            
+            // 更新下拉選單
+            const userSelect = document.getElementById('user-select');
+            userSelect.innerHTML = family.map(f => `<option>${f}</option>`).join('') + (tab === 'worker' ? '<option>Worker</option>' : '');
+
+            // 監聽該分頁資料
+            listenFirebase();
         }
 
-        function listenData(m) {
-            if(m !== 'worker') {
-                db.ref(m+'/basic').on('value', snap => {
-                    const data = snap.val() || {};
-                    document.getElementById(m+'-basic-display').innerHTML = Object.keys(data).map(key => `
-                        <div class="basic-info-item"><span><strong>${data[key].k}</strong>: ${data[key].v}</span>
-                        <button class="btn-del" onclick="delData('${m}/basic/${key}')">❌</button></div>`).join('');
-                });
-                db.ref(m+'/med').on('value', snap => {
-                    const data = snap.val() || {};
-                    document.getElementById(m+'-med-body').innerHTML = Object.keys(data).map(key => `
-                        <tr><td>${data[key].t}</td><td>${data[key].v}</td>
-                        <td><button class="btn-del" onclick="delData('${m}/med/${key}')">❌</button></td></tr>`).join('');
-                });
-            }
-            db.ref(m+'/chat').on('value', snap => {
+        function listenFirebase() {
+            // 監聽對話 (取消存歷史/刪除按鈕，純顯示)
+            db.ref(`${currentTab}/chat`).on('value', snap => {
                 const data = snap.val() || {};
-                document.getElementById(m+'-chat').innerHTML = Object.keys(data).map(key => `
-                    <div style="font-size:0.85rem; border-bottom:1px solid #eee; padding:5px"><b>${data[key].u}:</b> ${data[key].txt} 
-                    <div style="margin-top:3px"><button class="btn-save" style="font-size:0.7rem; padding:2px" onclick="moveH('chat','${m}','${key}')">存歷史</button>
-                    <button class="btn-del" style="font-size:0.7rem; padding:2px" onclick="delData('${m}/chat/${key}')">刪</button></div></div>`).join('');
+                const html = Object.keys(data).map(key => `
+                    <div class="chat-item">
+                        <span class="chat-user">${data[key].u} <small style="color:#999; font-weight:normal;">${data[key].time.split(' ')[1]}</small></span>
+                        <span class="chat-text">${data[key].txt}</span>
+                    </div>
+                `).join('');
+                const box = document.getElementById('chat-display');
+                box.innerHTML = html;
+                box.scrollTop = box.scrollHeight;
             });
-            db.ref(m+'/file').on('value', snap => {
+
+            // 監聽檔案
+            db.ref(`${currentTab}/file`).on('value', snap => {
                 const data = snap.val() || {};
-                document.getElementById(m+'-temp-file').innerHTML = Object.keys(data).map(key => `
-                    <div style="background:#eef; padding:5px; margin-top:5px; border-radius:5px">📄 ${data[key].name} 
-                    <button class="btn-save" style="font-size:0.7rem; padding:2px" onclick="moveH('file','${m}','${key}')">存歷史</button>
-                    <button class="btn-del" style="font-size:0.7rem; padding:2px" onclick="delData('${m}/file/${key}')">刪</button></div>`).join('');
+                document.getElementById('file-display').innerHTML = Object.keys(data).map(key => `
+                    <div class="file-item">📄 ${data[key].name} <button onclick="delData('${currentTab}/file/${key}')" style="border:none; background:none; cursor:pointer;">❌</button></div>
+                `).join('');
             });
         }
 
-        function moveH(type, m, key) {
-            db.ref(`${m}/${type}/${key}`).once('value', snap => {
-                const item = snap.val();
-                item.from = m;
-                db.ref(`history/${type}`).push(item);
-                db.ref(`${m}/${type}/${key}`).remove();
-            });
+        function sendMessage() {
+            const txt = document.getElementById('msg-input').value;
+            const u = document.getElementById('user-select').value;
+            if(!txt) return;
+            db.ref(`${currentTab}/chat`).push({ u, txt, time: new Date().toLocaleString() });
+            document.getElementById('msg-input').value = '';
         }
 
-        function listenHistory() {
-            ['chat', 'file'].forEach(type => {
-                db.ref(`history/${type}`).on('value', snap => {
-                    const data = snap.val() || {};
-                    document.getElementById(`history-${type}`).innerHTML = Object.keys(data).map(key => {
-                        const d = data[key];
-                        if(d.isBundle) {
-                            return `<div class="bundle-box"><div class="bundle-title"><span>📦 ${d.title}</span><div>
-                                <span class="add-to-bundle" onclick="appendBundle('${type}', '${key}')">➕ 追加</span>
-                                <button class="btn-del" onclick="delData('history/${type}/${key}')">❌</button></div></div>
-                                ${d.items.map(it=>`<div class="bundle-item">· [${it.from}] ${type==='chat'?it.u+': '+it.txt:'📄 '+it.name}</div>`).join('')}</div>`;
-                        }
-                        return `<div style="padding:5px; border-bottom:1px solid #ddd; font-size:0.85rem">
-                            <input type="checkbox" class="${type}-check" data-key="${key}"> [${d.from}] ${type==='chat'?d.u+': '+d.txt:'📄 '+d.name}</div>`;
-                    }).join('') || '<div style="color:#ccc; text-align:center; margin-top:20px">尚無存檔</div>';
-                });
-            });
+        function uploadFile() {
+            const f = document.getElementById('file-input').files[0];
+            if(f) db.ref(`${currentTab}/file`).push({ name: f.name, time: new Date().toLocaleString() });
         }
 
-        function bundleItems(type) {
-            const checks = Array.from(document.querySelectorAll(`.${type}-check:checked`));
-            if(checks.length === 0) return alert('請先勾選項目');
-            const title = prompt('請輸入打包名稱：');
-            if(!title) return;
-            const items = [];
-            const keysToDelete = [];
-            checks.forEach(c => {
-                const key = c.dataset.key;
-                keysToDelete.push(key);
-                db.ref(`history/${type}/${key}`).once('value', snap => items.push(snap.val()));
-            });
-            setTimeout(() => {
-                db.ref(`history/${type}`).push({ isBundle: true, title, items });
-                keysToDelete.forEach(k => db.ref(`history/${type}/${k}`).remove());
-            }, 500);
-        }
-
-        function appendBundle(type, bundleKey) {
-            const checks = Array.from(document.querySelectorAll(`.${type}-check:checked`));
-            if(checks.length === 0) return alert('請先勾選項目');
-            db.ref(`history/${type}/${bundleKey}`).once('value', bSnap => {
-                const bundle = bSnap.val();
-                checks.forEach(c => {
-                    const key = c.dataset.key;
-                    db.ref(`history/${type}/${key}`).once('value', iSnap => {
-                        bundle.items.push(iSnap.val());
-                        db.ref(`history/${type}/${key}`).remove();
-                    });
-                });
-                setTimeout(() => db.ref(`history/${type}/${bundleKey}`).set(bundle), 500);
-            });
-        }
-
-        function delData(path) { if(confirm('確定刪除？')) db.ref(path).remove(); }
-        function uploadFile(m) {
-            const f = document.getElementById(m+'-file-input').files[0];
-            if(f) addData(m+'/file', {name: f.name, time: new Date().toLocaleString()});
-        }
-        function startVoice(m) {
+        function startVoice() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
             if(!Speech) return alert('不支援語音');
             const rec = new Speech(); rec.lang = 'zh-TW';
-            rec.onstart = () => document.getElementById(m+'-mic').classList.add('recording');
-            rec.onend = () => document.getElementById(m+'-mic').classList.remove('recording');
-            rec.onresult = (e) => document.getElementById(m+'-msg').value = e.results[0][0].transcript;
+            rec.onstart = () => document.getElementById('mic-btn').classList.add('recording');
+            rec.onend = () => document.getElementById('mic-btn').classList.remove('recording');
+            rec.onresult = (e) => document.getElementById('msg-input').value = e.results[0][0].transcript;
             rec.start();
         }
-        function showTab(id) {
-            document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
-            document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-            document.getElementById(id).style.display='block';
-            event.currentTarget.classList.add('active');
-        }
-        function val(id) { return document.getElementById(id).value; }
-        function clr(id) { document.getElementById(id).value = ''; }
 
+        function delData(path) { if(confirm('確定刪除檔案？')) db.ref(path).remove(); }
+        
         init();
     </script>
 </body>
